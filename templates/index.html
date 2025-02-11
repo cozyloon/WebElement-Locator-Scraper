@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Element Locator Scraper</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.3.2/socket.io.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        table { width: 90%; margin: 20px auto; border-collapse: collapse; }
+        th, td { border: 1px solid black; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        input, button { margin: 5px; padding: 8px; }
+
+        /* Style for the spinner */
+        #loadingSpinner {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+            z-index: 9999;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 2s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+<h1>Web Element Locator Scraper</h1>
+<input type="text" id="url" placeholder="Enter website URL">
+<button onclick="scrapeElements()">Scrape Elements</button>
+
+<input type="text" id="searchText" placeholder="Search for text">
+<button onclick="searchElement()">Find Element</button>
+
+<table>
+    <thead>
+    <tr>
+        <th>Tag</th>
+        <th>Type</th>
+        <th>Text</th>
+        <th>XPath</th>
+    </tr>
+    </thead>
+    <tbody id="results"></tbody>
+</table>
+
+<!-- Loading Spinner -->
+<div id="loadingSpinner">
+    <div class="spinner"></div>
+</div>
+
+<script>
+    function scrapeElements() {
+        const url = document.getElementById('url').value;
+
+        // Show loading spinner
+        document.getElementById('loadingSpinner').style.display = 'block';
+
+        fetch('/scrape', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: url })
+        })
+        .then(response => response.json())
+        .then(data => {
+            const results = document.getElementById('results');
+            results.innerHTML = "";
+            data.elements.forEach(element => {
+                results.innerHTML += `
+                    <tr>
+                        <td>${element.tag}</td>
+                        <td>${element.type}</td>
+                        <td>${element.text}</td>
+                        <td>${element.xpath}</td>
+                    </tr>`;
+            });
+
+            // Hide loading spinner
+            document.getElementById('loadingSpinner').style.display = 'none';
+        })
+        .catch(error => {
+            // Handle error and hide loading spinner
+            console.error("Error:", error);
+            document.getElementById('loadingSpinner').style.display = 'none';
+        });
+    }
+
+    function searchElement() {
+        let searchText = document.getElementById("searchText").value.toLowerCase();
+        let rows = document.querySelectorAll("#results tr");
+        rows.forEach(row => {
+            let textCell = row.cells[2].innerText.toLowerCase();
+            if (textCell.includes(searchText)) {
+                row.style.backgroundColor = "yellow";
+                row.scrollIntoView();
+            } else {
+                row.style.backgroundColor = "";
+            }
+        });
+    }
+</script>
+
+</body>
+</html>
